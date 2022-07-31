@@ -1,4 +1,6 @@
-'''Module which is basically ORM object used for create and connection to database'''
+'''Module which is basically ORM object used for create and connection to database
+In line 38 it is default salt value for encryption and decryption. 
+It is recomended to change it.'''
 from cryptography.fernet import InvalidToken
 from sqlalchemy import create_engine, MetaData, Column, Integer, String, Table
 from sqlalchemy.orm import declarative_base, Session
@@ -33,13 +35,13 @@ class DataBase:
         self.login = loginn
         self.password = passwordd
         self.item = []
+        self.salt = 'django!'
     
-    def add_item(self, password, salt = 'django!'):
+    def add_item(self, password):
         '''Method adds nem item to password mannager database. Password is encode by Cryptografer app 
-        and in this from is stored in database. Salt can be change and it is recomended, 
-        but has own default value.'''
+        and in this from is stored in database.'''
         coded_password = Cryptografer(password.encode('utf-8'),
-        salt.encode('utf-8'),
+        self.salt.encode('utf-8'),
         self.password.encode('utf-8')
         )
         coded_password.kdf()
@@ -66,14 +68,14 @@ url adres of host, login and password.\n','*'*25)
                 
             return list
     
-    @staticmethod
-    def get_item_by_id(id, password, salt = 'django!'):
+    
+    def get_item_by_id(self, id, password):
         '''Method returns url adres, login and decoded password by id.'''
         list = []
         with Session(engine) as session:
             try:
                 item = session.query(Password_Mannager_Db).get(id)
-                decoded_password = Cryptografer(password.encode('utf-8'), salt.encode('utf-8'), item.password)
+                decoded_password = Cryptografer(password.encode('utf-8'), self.salt.encode('utf-8'), item.password)
                 decoded_password.kdf()
                 list.append([item.url, item.login, decoded_password.decrypt().decode('utf-8')])
                 return list
@@ -84,15 +86,15 @@ url adres of host, login and password.\n','*'*25)
             except TypeError:
                 print(f'******* Please put id number password for decode password saved in database *******')
     
-    @staticmethod
-    def get_item_by_url(url, password, salt = 'django!'):
+    
+    def get_item_by_url(self, url, password, salt = 'django!'):
         '''Method returns url adres, login and decoded password by url adres.'''
         list = []
         with Session(engine) as session:
             try:
                 items = session.query(Password_Mannager_Db).filter(Password_Mannager_Db.url == url)
                 for item in items:
-                    decoded_password = Cryptografer(password.encode('utf-8'), salt.encode('utf-8'), item.password)
+                    decoded_password = Cryptografer(password.encode('utf-8'), self.salt.encode('utf-8'), item.password)
                     decoded_password.kdf()
                     list.append([item.id, item.login, decoded_password.decrypt().decode('utf-8')])
 
